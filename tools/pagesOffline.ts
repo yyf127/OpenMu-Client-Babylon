@@ -99,7 +99,6 @@ for (const dir of ['packs', 'game-assets-v097d', 'Data-v097d']) {
     console.log(`  dropped ${dir}`);
   }
 }
-rmSync(join(ROOT, 'assets-index-v097d.json'), { force: true });
 
 // ---------------------------------------------------------------- 2. map whitelist
 // Applied to both trees together. `?map=` still works for the kept worlds;
@@ -137,40 +136,17 @@ for (const p of walk(join(ROOT, 'Data'))) {
 }
 console.log(`  remaining same-path duplicates: ${dupFiles} files / ${mb(dupBytes)} (one copy per resolver root)`);
 
-// ---------------------------------------------------------------- 4. assets index
-// assetsIndex.ts scanned the full tree. Re-filter it so the download screen
-// never offers a file the consolidation removed.
-const indexPath = join(ROOT, 'assets-index.json');
-if (existsSync(indexPath)) {
-  const index = JSON.parse(readFileSync(indexPath, 'utf8')) as {
-    built: string;
-    sidecars: boolean;
-    groups: {
-      id: string; kind: string; name: string; world?: number;
-      files: number; bytes: number; transfer: number;
-      dirs: [string, [string, number][]][];
-      lite?: [string, [string, number][]][];
-      liteTransfer?: number;
-      bundle?: { url: string; bytes: number };
-    }[];
-  };
-  const exists = (dir: string, name: string): boolean => existsSync(join(ROOT, dir, name));
-  for (const g of index.groups) {
-    g.dirs = g.dirs
-      .map(([dir, files]) => [dir, files.filter(([name]) => exists(dir, name))] as [string, [string, number][]])
-      .filter(([, files]) => files.length > 0);
-    if (g.lite) g.lite = g.lite.filter(([dir]) => dir.length > 0);
-    delete g.bundle;
-    g.files = g.dirs.reduce((n, [, f]) => n + f.length, 0);
-    g.bytes = g.dirs.reduce((n, [, f]) => n + f.reduce((m, [, b]) => m + b, 0), 0);
-    g.transfer = g.bytes;
-    delete g.liteTransfer;
-  }
-  index.groups = index.groups.filter(g => g.files > 0);
-  index.sidecars = false;
-  writeFileSync(indexPath, JSON.stringify(index));
-  console.log(`  assets-index.json: ${index.groups.length} groups, ${index.groups.reduce((n, g) => n + g.files, 0)} files`);
+// ---------------------------------------------------------------- 4. no pre-download
+// `assets-index*.json` drives the first-run "download every asset group"
+// screen (AutoDownload / preloadAll): ~474 MB on this build. The client
+// streams what the world actually needs, and `loadAssetsIndex()` treats a
+// missing index as "no download screen" (see assetDownload.ts), which is what
+// a trial build wants. Removing it also drops a dependency on files the
+// consolidation removed.
+for (const f of ['assets-index.json', 'assets-index-v097d.json']) {
+  rmSync(join(ROOT, f), { force: true });
 }
+console.log('  removed pre-download indexes (no first-run bulk download)');
 
 // ---------------------------------------------------------------- 5. project-page HTML
 let html = readFileSync(join(ROOT, 'index.html'), 'utf8');

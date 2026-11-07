@@ -54,7 +54,6 @@ jobs:
           APP_ENV=prod ./node_modules/.bin/vite build
           bun run tools/copyData.ts
           bun run tools/copyData.ts --src Data-v097d --out dist/Data-v097d
-          bun run tools/assetsIndex.ts
 
       - name: Consolidate assets for Pages
         run: |
