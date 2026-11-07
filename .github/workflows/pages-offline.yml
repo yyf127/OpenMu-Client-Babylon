@@ -1,0 +1,84 @@
+name: Pages · Offline single-player demo
+
+# A static, serverless build of the `/offline` demo from README.md. GitHub
+# Pages cannot host the full 1.9 GB asset tree (1 GB site limit), so the build
+# stops before the gzip / lite / bundle sidecars and `tools/pagesOffline.ts`
+# consolidates the two asset trees into a Pages-sized output.
+#
+# Site: https://yyf127.github.io/OpenMu-Client-Babylon/?offline
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/pages-offline.yml'
+      - 'tools/pagesOffline.ts'
+      - 'src/app/offline.ts'
+      - 'index.html'
+      - 'vite.config.ts'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build offline demo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build client
+        # Deliberately not `bun run build`: that also writes gzip sidecars,
+        # lighter copies and download bundles, which would nearly double the
+        # site size. The client falls back to plain files when a .gz is absent.
+        run: |
+          APP_ENV=prod ./node_modules/.bin/vite build
+          bun run tools/copyData.ts
+          bun run tools/copyData.ts --src Data-v097d --out dist/Data-v097d
+          bun run tools/assetsIndex.ts
+
+      - name: Consolidate assets for Pages
+        run: |
+          bun run tools/pagesOffline.ts \
+            --root dist \
+            --base "/${{ github.event.repository.name }}/" \
+            --worlds "World1,World2,World3"
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ./dist
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

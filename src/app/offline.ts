@@ -248,8 +248,10 @@ export const playOffline = action('playOffline', (): void => {
   const map = offlineMapFromUrl();
   const cls = offlineClassFromUrl() ?? CharacterClassNumber.DarkKnight;
 
-  // Keep the query: a dev-server reload must land on the same map.
-  history.replaceState(null, '', '/offline' + location.search);
+  // Keep the current path AND the query: a dev-server reload must land on the
+  // same map, and a project page hosted under /<repo>/ (GitHub Pages) must not
+  // be rewritten to the domain root, where a refresh would 404.
+  history.replaceState(null, '', location.pathname + location.search);
   Session.isOffline = true;
   AppState.uiState = UIState.World;
   // `?bare` skips the test loadout: the per-class close-up shots need the
