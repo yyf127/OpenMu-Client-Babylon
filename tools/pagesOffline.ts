@@ -200,12 +200,21 @@ writeFileSync(join(ROOT, 'index.html'), html);
 // README mentions) then still boots the client, with `offline` in the URL.
 writeFileSync(join(ROOT, '404.html'), html);
 
+// The /move window rewrites the address bar to a root-relative
+// `/offline?map=...`. Under /<repo>/ that points at the domain root, where a
+// refresh would 404, so keep the current path (same fix as playOffline()).
+const offlineQueryJump = /"\/offline\?"\s*\+\s*/g;
+const fixRoutes = (s: string): string => s.replace(offlineQueryJump, 'location.pathname+"?"+');
+
 // The same absolute paths can appear inside bundled JS/CSS.
+let routeFixes = 0;
 for (const p of walk(ROOT).filter(p => /\.(js|css)$/.test(p))) {
   const src = readFileSync(p, 'utf8');
-  const out = fixPaths(src);
+  routeFixes += (src.match(offlineQueryJump) ?? []).length;
+  const out = fixRoutes(fixPaths(src));
   if (out !== src) writeFileSync(p, out);
 }
+console.log(`  project-page fixes: ${routeFixes} root-relative /offline? jump(s)`);
 
 // ---------------------------------------------------------------- 6. size gate
 const after = report('after consolidation');
