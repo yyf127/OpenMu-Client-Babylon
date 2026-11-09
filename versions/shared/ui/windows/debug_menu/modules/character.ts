@@ -81,7 +81,7 @@ const CLASSES: readonly CharacterClassNumber[] = [
 
 const classLabel = (cls: CharacterClassNumber): string => CharacterClassNumber[cls] ?? String(cls);
 
-function setClass(cls: CharacterClassNumber): void {
+export function setClass(cls: CharacterClassNumber): void {
   if (Hero.charClass === cls) return;
 
   runInAction(() => {
@@ -115,7 +115,7 @@ const ARMOR_SLOTS: readonly { slot: number; group: number; name: string }[] = [
 const WEAPON_GROUPS = [0, 1, 2, 3, 4, 5, 6];
 
 /** Every item of one group the hero's class may wear, in (index) order. */
-function itemsFor(group: number, slot?: number): ItemRecord[] {
+export function itemsFor(group: number, slot?: number): ItemRecord[] {
   return ItemsDatabase.all()
     .filter(def => {
       if (def.Group !== group) return false;
@@ -134,14 +134,14 @@ function itemsFor(group: number, slot?: number): ItemRecord[] {
  * is what keeps the cloaks and the summoner books, which share the armour
  * indexes, out of the sets.
  */
-function completeSetIndexes(): number[] {
+export function completeSetIndexes(): number[] {
   const perSlot = ARMOR_SLOTS.map(({ group, slot }) =>
     new Set(itemsFor(group, slot).map(def => def.Index))
   );
   return [...perSlot[1]].filter(i => perSlot.every(set => set.has(i))).sort((a, b) => a - b);
 }
 
-function equip(slot: number, def: { group: number; num: number }): void {
+export function equip(slot: number, def: { group: number; num: number }): void {
   runInAction(() => {
     const held = Hero.items[slot];
     Hero.items[slot] = {
@@ -159,7 +159,7 @@ function equip(slot: number, def: { group: number; num: number }): void {
   Hero.syncPlayerAppearance();
 }
 
-function clearSlot(slot: number): void {
+export function clearSlot(slot: number): void {
   runInAction(() => {
     Hero.items[slot] = null;
   });
@@ -167,7 +167,7 @@ function clearSlot(slot: number): void {
 }
 
 /** Wear a whole set: the same index in the five armour groups. */
-function wearSet(num: number): void {
+export function wearSet(num: number): void {
   runInAction(() => {
     for (const { slot, group } of ARMOR_SLOTS) {
       const held = Hero.items[slot];
@@ -186,7 +186,7 @@ function wearSet(num: number): void {
   Hero.syncPlayerAppearance();
 }
 
-function clearArmor(): void {
+export function clearArmor(): void {
   runInAction(() => {
     for (const { slot } of ARMOR_SLOTS) Hero.items[slot] = null;
   });
@@ -227,7 +227,7 @@ const GEAR_SLOTS: readonly number[] = [
   InventoryConstants.WingsSlot,
 ];
 
-function patchSlot(slot: number, patch: Partial<Enhance>): void {
+export function patchSlot(slot: number, patch: Partial<Enhance>): void {
   const item = Hero.items[slot];
   if (!item) return;
 
@@ -247,7 +247,7 @@ function patchSlot(slot: number, patch: Partial<Enhance>): void {
   Hero.syncPlayerAppearance();
 }
 
-function patchAll(patch: Partial<Enhance>): void {
+export function patchAll(patch: Partial<Enhance>): void {
   for (const slot of GEAR_SLOTS) patchSlot(slot, patch);
 }
 
@@ -258,7 +258,7 @@ function patchAll(patch: Partial<Enhance>): void {
  * nothing and no cast can go out. Filling the list from the version's own
  * definitions is what makes the cast buttons below do anything at all.
  */
-function learnEverySkill(): void {
+export function learnEverySkill(): void {
   const known = new Set(HeroSkills.skills.map(s => s.number));
   let index = HeroSkills.skills.reduce((max, s) => Math.max(max, s.index), -1);
   const added: { index: number; number: number; level: number }[] = [];
@@ -275,7 +275,7 @@ function learnEverySkill(): void {
   });
 }
 
-function forgetSkills(): void {
+export function forgetSkills(): void {
   runInAction(() => {
     HeroSkills.setSkillList([]);
   });
@@ -321,7 +321,7 @@ function nearestDummy(): Entity | null {
   return best;
 }
 
-function castSkill(num: number): void {
+export function castSkill(num: number): void {
   const world = Ecs.world;
   const hero = world?.playerEntity;
   if (!world || !hero || hero.dying) return;
@@ -350,7 +350,7 @@ function castSkill(num: number): void {
  */
 let safeZoneOff = false;
 
-function toggleSafeZone(): void {
+export function toggleSafeZone(): void {
   safeZoneOff = !safeZoneOff;
   const hero = Ecs.world?.playerEntity;
 
@@ -378,7 +378,7 @@ let dummyCount = 0;
  * scene. An offline world has no server to send scope packets, so this is the
  * only way a cast has something to aim at.
  */
-function summonDummy(): void {
+export function summonDummy(): void {
   const world = Ecs.world;
   const hero = world?.playerEntity;
   if (!world || !hero?.transform) return;
