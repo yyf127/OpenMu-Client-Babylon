@@ -5,5 +5,6 @@
  * cycle's Day tab is the reference example).
  */
 import './move';
+import './character';
 import './lighting';
 import './info';

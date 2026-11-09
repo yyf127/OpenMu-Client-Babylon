@@ -85,7 +85,7 @@ if (!existsSync(join(ROOT, 'index.html'))) {
   process.exit(1);
 }
 
-const before = report('before consolidation');
+report('before consolidation');
 
 // ---------------------------------------------------------------- 1. whole trees
 // `packs/` is the optional upscaled texture pack (the demo uses the originals),
