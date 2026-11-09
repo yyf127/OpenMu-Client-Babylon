@@ -14,9 +14,13 @@ on:
       - main
     paths:
       - '.github/workflows/pages-offline.yml'
-      - 'tools/pagesOffline.ts'
-      - 'src/app/offline.ts'
+      - 'tools/**'
+      - 'src/**'
+      - 'versions/**'
+      - 'public/**'
+      - 'Data/**'
       - 'index.html'
+      - 'package.json'
       - 'vite.config.ts'
 
 permissions:
